@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace StudentManagementLINQ
 {
-    // Định nghĩa lớp Student
+    
     class Student
     {
         public int Id { get; set; }
@@ -21,10 +21,10 @@ namespace StudentManagementLINQ
     {
         static void Main(string[] args)
         {
-            // Bật hiển thị UTF-8 cho Console
+            
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-            // Tạo danh sách ít nhất 5 học sinh
+            
             List<Student> students = new List<Student>()
             {
                 new Student{Id = 1, Name = "An", Age = 16},
@@ -34,12 +34,12 @@ namespace StudentManagementLINQ
                 new Student{Id = 5, Name = "Dũng", Age = 17}
             };
 
-            // a. In danh sách toàn bộ học sinh
+           
             Console.WriteLine("a. Danh sách toàn bộ học sinh:");
             students.ForEach(s => Console.WriteLine(s));
             Console.WriteLine();
 
-            // b. Tìm học sinh có tuổi từ 15 đến 18
+            
             var hs1518 = from s in students
                          where s.Age >= 15 && s.Age <= 18
                          select s;
@@ -48,7 +48,7 @@ namespace StudentManagementLINQ
                 Console.WriteLine(s);
             Console.WriteLine();
 
-            // c. Tìm học sinh có tên bắt đầu bằng chữ "A"
+           
             var hsA = from s in students
                       where s.Name.StartsWith("A")
                       select s;
@@ -57,12 +57,12 @@ namespace StudentManagementLINQ
                 Console.WriteLine(s);
             Console.WriteLine();
 
-            // d. Tính tổng tuổi
+          
             int tongTuoi = (from s in students select s.Age).Sum();
             Console.WriteLine($"d. Tổng tuổi của tất cả học sinh: {tongTuoi}");
             Console.WriteLine();
 
-            // e. Tìm học sinh có tuổi lớn nhất
+            
             int maxAge = (from s in students select s.Age).Max();
             var hsMaxAge = from s in students
                            where s.Age == maxAge
@@ -72,7 +72,7 @@ namespace StudentManagementLINQ
                 Console.WriteLine(s);
             Console.WriteLine();
 
-            // f. Sắp xếp theo tuổi tăng dần
+           
             var sapXep = from s in students
                          orderby s.Age
                          select s;
