@@ -1,0 +1,229 @@
+CREATE DATABASE QuanLySinhVien;
+GO
+
+USE QLSV;
+GO
+CREATE TABLE Faculty (
+    FacultyID INT PRIMARY KEY IDENTITY(1,1),
+    FacultyName NVARCHAR(200) NOT NULL
+);
+CREATE TABLE Student (
+    StudentID NVARCHAR(20) PRIMARY KEY,
+    FullName NVARCHAR(200) NOT NULL,
+    AverageScore FLOAT,
+    FacultyID INT,
+    FOREIGN KEY (FacultyID) REFERENCES Faculty(FacultyID)
+);
+-- Dữ liệu bảng Faculty
+INSERT INTO Faculty (FacultyName)
+VALUES 
+    (N'Công Nghệ Thông Tin'),
+    (N'Ngôn Ngữ Anh'),
+    (N'Quản trị kinh doanh');
+
+-- Dữ liệu bảng Student
+INSERT INTO Student (StudentID, FullName, AverageScore, FacultyID)
+VALUES
+    ('1611061916', N'Nguyễn Trần Hoàng Lan', 4.5, 1),
+    ('1711060596', N'Đàm Minh Đức', 2.5, 1),
+    ('1711061004', N'Nguyễn Quốc An', 10, 2);
+SELECT * FROM Faculty;
+SELECT * FROM Student;
+SELECT 
+    s.StudentID,
+    s.FullName,
+    f.FacultyName AS TenKhoa,
+    s.AverageScore
+FROM Student s
+JOIN Faculty f ON s.FacultyID = f.FacultyID;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Lap6
+{
+    public partial class Form1 : Form
+    {
+        string connectionString = "Data Source=LAPTOP-0QGFOTFB;Initial Catalog=QLSV;Integrated Security=True";
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            LoadKhoa();
+        }
+        private void LoadKhoa()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    string query = "SELECT FacultyID, FacultyName FROM Faculty";
+                    SqlDataAdapter da = new SqlDataAdapter(query, conn);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    // Thêm dòng "Tất cả" vào đầu DataTable
+                    DataRow allRow = dt.NewRow();
+                    allRow["FacultyID"] = DBNull.Value; // hoặc "ALL"
+                    allRow["FacultyName"] = "Tất cả";
+                    dt.Rows.InsertAt(allRow, 0);
+
+                    cbKhoa.DataSource = dt;
+                    cbKhoa.DisplayMember = "FacultyName";
+                    cbKhoa.ValueMember = "FacultyID";
+
+                    cbKhoa.SelectedIndex = 0;
+                    LoadSinhVienTheoKhoa(null); // Tải tất cả sinh viên
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải khoa: " + ex.Message);
+            }
+        }
+        private void LoadSinhVienTheoKhoa(string maKhoa)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    string query;
+                    SqlCommand cmd = new SqlCommand();
+                    cmd.Connection = conn;
+
+                    if (string.IsNullOrEmpty(maKhoa))
+                    {
+                        // Lấy tất cả sinh viên từ bảng SinhVien
+                        query = "SELECT StudentID, FullName, AverageScore, FacultyID FROM Student ORDER BY StudentID";
+                    }
+                    else
+                    {
+                        // Lấy sinh viên theo khoa
+                        query = "SELECT StudentID, FullName, AverageScore, FacultyID FROM Student WHERE FacultyID = @FacultyID ORDER BY StudentID";
+                        cmd.Parameters.AddWithValue("@FacultyID", maKhoa);
+                    }
+
+                    cmd.CommandText = query;
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    dgvSinhVien.DataSource = dt;
+                }
+}
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi tải sinh viên: " + ex.Message);
+            }
+        }
+
+        private void cbKhoa_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cbKhoa.SelectedValue == null || cbKhoa.SelectedValue == DBNull.Value)
+            {
+                LoadSinhVienTheoKhoa(null); // Hiển thị tất cả
+            }
+            else
+            {
+                LoadSinhVienTheoKhoa(cbKhoa.SelectedValue.ToString());
+            }
+        }
+
+        private void btnThem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    string query = "INSERT INTO Student (StudentID, FullName, AverageScore, FacultyID) VALUES (@StudentID, @FullName, @AverageScore, @FacultyID)";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@StudentID", txtStudentID.Text.Trim());
+                    cmd.Parameters.AddWithValue("@FullName", txtFullName.Text.Trim());
+                    cmd.Parameters.AddWithValue("@AverageScore", Convert.ToDouble(txtAverageScore.Text.Trim()));
+                    cmd.Parameters.AddWithValue("@FacultyID", cbKhoa.SelectedValue);
+
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+
+                    MessageBox.Show("Thêm sinh viên thành công!");
+                    LoadSinhVienTheoKhoa(cbKhoa.SelectedValue?.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khi thêm sinh viên: " + ex.Message);
+            }
+        }
+
+        private void btnSua_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    string query = "UPDATE Student SET FullName = @FullName, AverageScore = @AverageScore, FacultyID = @FacultyID WHERE StudentID = @StudentID";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@StudentID", txtStudentID.Text.Trim());
+                    cmd.Parameters.AddWithValue("@FullName", txtFullName.Text.Trim());
+                    cmd.Parameters.AddWithValue("@AverageScore", Convert.ToDouble(txtAverageScore.Text.Trim()));
+                    cmd.Parameters.AddWithValue("@FacultyID", cbKhoa.SelectedValue);
+
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+
+                    MessageBox.Show("Sửa sinh viên thành công!");
+                    LoadSinhVienTheoKhoa(cbKhoa.SelectedValue?.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+MessageBox.Show("Lỗi khi sửa sinh viên: " + ex.Message);
+            }
+        }
+
+        private void btnXoa_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Bạn có chắc muốn xóa sinh viên này?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                try
+                {
+                    using (SqlConnection conn = new SqlConnection(connectionString))
+                    {
+                        string query = "DELETE FROM Student WHERE StudentID = @StudentID";
+                        SqlCommand cmd = new SqlCommand(query, conn);
+                        cmd.Parameters.AddWithValue("@StudentID", txtStudentID.Text.Trim());
+
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        conn.Close();
+
+                        MessageBox.Show("Xóa sinh viên thành công!");
+                        LoadSinhVienTheoKhoa(cbKhoa.SelectedValue?.ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Lỗi khi xóa sinh viên: " + ex.Message);
+                }
+            }
+        }
+
+        private void btnThoat_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+    }
+}
